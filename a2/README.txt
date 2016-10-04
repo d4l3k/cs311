@@ -25,9 +25,9 @@ Signed: Tristan Rice
 
 Plese fill in each of the following:
 
-Approximate hours on the project: TODO (when you get there)
+Approximate hours on the project: 3
 
-Acknowledgment of assistance (per the collab policy!): TODO
+Acknowledgment of assistance (per the collab policy!): None.
 
 For teams, rough breakdown of work:
 
@@ -35,12 +35,16 @@ For teams, rough breakdown of work:
 
 
 What's your favourite programming language keyword (reserved word, that
-is)?  TODO fill one in here.
+is)?
+
+go
 
 
 
 
-TODO: Document any additional issues about your submission you feel
+Document any additional issues about your submission you feel
 might be important.
+
+None
 
 
