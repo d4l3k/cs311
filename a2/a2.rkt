@@ -167,6 +167,9 @@
 
          [(Pair-case) (parse-pair-case arg-count args)]
 
+         [(Fst) (Pair-case (parse (first args)) 'x 'y (parse 'x))]
+
+         [(Snd) (Pair-case (parse (first args)) 'x 'y (parse 'y))]
 
          [else (error "parse: syntax error")]))]
 
@@ -577,6 +580,5 @@
                 {App fact 5}}
              (Num 120))
 
-
-
-
+(test-interp '{Fst {Pair 1 2}} (Num 1))
+(test-interp '{Snd {Pair 1 2}} (Num 2))
