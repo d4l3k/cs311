@@ -390,9 +390,10 @@
 
     [Ite (e eThen eElse)
          (let* ([v (interp e)])
-           (if (Btrue? v)
-             (interp eThen)
-             (interp eElse)))]
+           (type-case E v
+                      [Btrue () (interp eThen)]
+                      [Bfalse () (interp eElse)]
+                      [else (error "Ite requires boolean as first arg")]))]
 
     [Let (x e1 e2)
           (let* ([v1 (interp e1)]
@@ -413,7 +414,7 @@
           (Pair (interp e1) (interp e2))]
 
     [Pair-case (ePair x1 x2 eB)
-               (type-case E ePair
+               (type-case E (interp ePair)
                           [Pair (e1 e2)
                                 (interp (subst e1 x1 (subst e2 x2 eB)))]
                           [else (error "tried to run pair-case with non pair")])]
@@ -582,3 +583,5 @@
 
 (test-interp '{Fst {Pair 1 2}} (Num 1))
 (test-interp '{Snd {Pair 1 2}} (Num 2))
+(test-interp '{Let* {y1 y2} {y2 1} y2} (Num 1))
+(test-interp '{Snd {App {Lam x x} {Pair 8 9}}} (Num 9))
