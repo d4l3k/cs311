@@ -61,36 +61,36 @@ The `...`  are read as one or more occurrences of the preceding nonterminal.
                       [(App) (if (= (length sexp) 3)
                                  (App (parse (second sexp)) (parse (third sexp)))
                                  (error "parse: App needs exactly 2 arguments"))]
-                      ;[(+-nary) (...)]
+                      [(+-nary) (Add (parse (second sexp)) (parse (cons '+-nary (rest (rest sexp))))]
                       [else (error "parse: I only understand +, -, Let, Lam, and App")])]
     [else (error "parse: syntax error")]))
 
-;; interp : E? -> E? 
+;; interp : E? -> E?
 ;; interpreter for expressions (as presented in class)
 (define (interp e)
   (type-case E e
     [Num (n) (Num n)]
-    
+
     [Add (e1 e2) (type-case E (interp e1)
                    [Num (n1) (type-case E (interp e2)
                                [Num (n2) (Num (+ n1 n2))]
                                [else (error "interp: Add on non-number")])]
                    [else (error "interp: Add on non-number")])]
-    
+
     [Sub (e1 e2) (type-case E (interp e1)
                    [Num (n1) (type-case E (interp e2)
                                [Num (n2) (Num (- n1 n2))]
                                [else (error "interp: Sub on non-number")])]
                    [else (error "interp: Sub on non-number")])]
-    
+
     [Id (x) (error "interp: free-variable-error " x)]
-    
+
     [Let (x e1 e2) (let* ([v1 (interp e1)]
                           [v2 (interp (subst v1 x e2))])
                      v2)]
-    
+
     [Lam (x body) (Lam x body)]
-    
+
     #|
     ;; expression strategy
     [App (e1 e2) (let ([v1 (interp e1)])
@@ -99,7 +99,7 @@ The `...`  are read as one or more occurrences of the preceding nonterminal.
                                      v)]
                      [else (error "interp: applied non-function")]))]
     |#
-    
+
     ;; value strategy
     [App (e1 e2) (let ([v1 (interp e1)]
                        [v2 (interp e2)])
@@ -119,7 +119,7 @@ The `...`  are read as one or more occurrences of the preceding nonterminal.
               (Nary-Add (e1 e2 ... ek)) ⇓ (Num (n1 + n2))
 
     |#
-    
+
     ;[Nary-Add ...]
     ))
 
@@ -160,11 +160,11 @@ into parantheses (). For example, when we run '{+ 1 2} we get back '(+ 1 2).
 |#
 
 ;; unparse : E -> sexp
-;; unparser for abstract expressions                 
+;; unparser for abstract expressions
 (define (unparse e)
   (type-case E e
     [Num (n)       n]
-    [Add (e1 e2)   (list '+ (unparse e1) (unparse e2))] 
+    [Add (e1 e2)   (list '+ (unparse e1) (unparse e2))]
     ;; The rest of unparse uses "quasiquote" ("`...") and "unquote" (",...").
     ;; This is either a cute trick or a "crown jewel" of Racket,
     ;; depending on your taste.
@@ -174,10 +174,10 @@ into parantheses (). For example, when we run '{+ 1 2} we get back '(+ 1 2).
     ;;
     [Sub (e1 e2)   `(- ,(unparse e1) ,(unparse e2))]
     [Id  (x)        x]
-    ;[Let (x e body) ]
+    [Let (x e body) (cons `(let ,(unparse x) ,(unparse e) ,(unparse body))]
     ;[Lam (name body)]
     ;[App (f arg) ]
-    ;[Nary-Add (args) (cons '+-nary (map unparse args))]
+    [Nary-Add (args) (cons '+-nary (map unparse args))]
     [else (error "not implemented yet")]
     ))
 
@@ -239,5 +239,5 @@ and adapt our parser to handle them.
 In Problem 3, we extended the `+` and `-` operations to support at least two arguments. By treating
 them as syntactic sugar, we lost a one-to-one mapping between our concrete syntax and abstract syntax.
 For example, `(unparse PAE1) does not return AE1 bur rather '(+ (+ 1 2) 3). Extend the unparser to
-handle such n-ary `+` and `-` cases.  
+handle such n-ary `+` and `-` cases.
 |#
