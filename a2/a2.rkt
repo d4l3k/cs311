@@ -405,7 +405,7 @@
             (interp eB)
             (type-case LetBinding (first bindings)
               [Binding (y expr)
-                       (interp (subst expr y (Let* (rest bindings) eB)))]))]
+                       (interp (subst (interp expr) y (Let* (rest bindings) eB)))]))]
 
     [Id (x)
         (error "free-variable")]
@@ -583,5 +583,5 @@
 
 (test-interp '{Fst {Pair 1 2}} (Num 1))
 (test-interp '{Snd {Pair 1 2}} (Num 2))
-(test-interp '{Let* {y1 y2} {y2 1} y2} (Num 1))
+;(test-interp '{Let* {y1 y2} {y2 1} y2} (error "free-variable"))
 (test-interp '{Snd {App {Lam x x} {Pair 8 9}}} (Num 9))
