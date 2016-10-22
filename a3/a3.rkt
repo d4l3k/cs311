@@ -790,27 +790,31 @@
 (test (interp expr-3a) (Btrue))
 
 ; Part 3b (does not evaluate; accepted by typeof)
-(define expr-3b #f)
+; This does not evaluate since it is an infinite loop.
+(define expr-3b (parse '{Rec u bool u}))
+(test (typeof-program expr-3b) (Tbool))
+;(test (interp expr-3b) (Tbool))
 
 ; Part 3c (evaluates to a lam, has type {-> bool bool},
 ;          and evaluates to a value iff its argument is Bfalse)
-(define expr-3c (parse `{Lam x bool {Ite x y Btrue}}))
-(test (interp (App expr-3c (Bfalse))) (Btrue))
-(test/exn (interp (App expr-3c (Btrue))) "free-variable")
+(define expr-3c (parse `{Lam x bool {Ite x {Rec u bool u} Btrue}}))
+(test (typeof-program expr-3c) (T-> (Tbool) (Tbool)))
 
 ; Part 3d (has type {-> {-> bool bool} bool}
 ;          and, when applied to any function f of type {-> bool bool},
 ;          evaluates to a value iff {App f Bfalse} evaluates to a value)
-(define expr-3d
-  #false
-  )
+(define expr-3d (parse `{Lam f {-> bool bool} {Let a {App f Bfalse} Btrue}}))
+
+(test (typeof-program expr-3d) (T-> (T-> (Tbool) (Tbool)) (Tbool)))
+(test (interp (App expr-3d (parse `{Lam f bool 1}))) (Btrue))
 
 ; Part 3e: same as 3d, but evaluates to a value
 ;                      iff {App f Bfalse} does *not* evaluate to a value
 (define expr-3e
   ; This is impossible because there is currently no way to capture exceptions
   ; in Fun. There also isn't a way to know ahead of time whether or not it will
-  ; evaluate by analysing the expression.
+  ; evaluate by analysing the expression. For instance, an infinite loop is
+  ; impossible to detect due to the halting problem.
   #false
   )
 
