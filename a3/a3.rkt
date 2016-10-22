@@ -703,15 +703,27 @@
                                 [AL (typeof tc eL)]
                                 [AR (typeof tc eR)])
                            (if (and (Ttree? AL)
-                                     (Ttree? AR)
-                                     (eq? AKey (Ttree-keys AL))
-                                     (eq? (Ttree-keys AL) (Ttree-keys AR)))
+                                    (Ttree? AR)
+                                    (type=? (Ttree AKey) AL)
+                                    (type=? AL AR))
                              AL
                              #f))]
 
     [Tree-case (e eLeaf xKey xL xR eBranch)
-               (error "unimplemented")]
-
+               (let* ([treeA (typeof tc e)]
+                      [BLeaf (typeof tc eLeaf)])
+                 (if (Ttree? treeA)
+                   (let* ([A (Ttree-keys treeA)]
+                          [BBranch
+                            (typeof
+                              (tc/cons-tp xKey A
+                                          (tc/cons-tp xL treeA
+                                                      (tc/cons-tp xR treeA tc)))
+                              eBranch)])
+                        (if (type=? BLeaf BBranch)
+                             BBranch
+                             #f))
+                   #f))]
     ))
 
 (define (typeof-program e)
@@ -749,6 +761,8 @@
 (test (typeof-program (parse '{Pair Btrue 2})) (T* (Tbool) (Tnum)))
 (test (typeof-program (parse '{Pair-case {Pair 1 2} {a b => {+ a b}}})) (Tnum))
 (test (typeof-program (parse '{Pair-case {Pair Btrue 10} {a b => {Pair a b}}})) (T* (Tbool) (Tnum)))
+(test (typeof-program (parse '(Leaf num))) (Ttree (Tnum)))
+(test (typeof-program (parse '(Branch 1 (Leaf num) (Leaf num)))) (Ttree (Tnum)))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
