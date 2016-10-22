@@ -784,20 +784,19 @@
 ; branches we left in `typeof' to claim that an expression doesn't typecheck.
 
 ; Part 3a (evaluates; rejected by typeof)
-(define expr-3a
-  #false
-  )
+(define expr-3a (parse `{App {Lam x num x} Btrue}))
+
+(test (typeof-program expr-3a) #f)
+(test (interp expr-3a) (Btrue))
 
 ; Part 3b (does not evaluate; accepted by typeof)
-(define expr-3b
-  #false
-  )
+(define expr-3b #f)
 
 ; Part 3c (evaluates to a lam, has type {-> bool bool},
 ;          and evaluates to a value iff its argument is Bfalse)
-(define expr-3c
-  #false
-  )
+(define expr-3c (parse `{Lam x bool {Ite x y Btrue}}))
+(test (interp (App expr-3c (Bfalse))) (Btrue))
+(test/exn (interp (App expr-3c (Btrue))) "free-variable")
 
 ; Part 3d (has type {-> {-> bool bool} bool}
 ;          and, when applied to any function f of type {-> bool bool},
@@ -809,6 +808,9 @@
 ; Part 3e: same as 3d, but evaluates to a value
 ;                      iff {App f Bfalse} does *not* evaluate to a value
 (define expr-3e
+  ; This is impossible because there is currently no way to capture exceptions
+  ; in Fun. There also isn't a way to know ahead of time whether or not it will
+  ; evaluate by analysing the expression.
   #false
   )
 
