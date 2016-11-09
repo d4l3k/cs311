@@ -59,29 +59,29 @@
   [Binop (op Op?) (lhs E?) (rhs E?)]
   [Let (name symbol?) (named-expr E?) (body E?)]
   [Id (name symbol?)]
-  
+
   [Bfalse]
   [Btrue]
   [Ite (scrutinee E?) (then-branch E?) (else-branch E?)]
-  
+
   [Lam (name symbol?)                (body E?)]
   [App (function E?) (argument E?)]
   [Rec (name symbol?)                   (body E?)]
-  
+
   ; pairs
   [Pair (left E?) (right E?)]
   [Pair-case (scrutinee E?) (name1 symbol?) (name2 symbol?) (body E?)]
-  
+
   ; trees
   [Leaf]
   [Branch (key E?) (left E?) (right E?)]
   [Tree-case  (scrutinee E?)
               (leaf-branch E?)
               (key symbol?) (left symbol?) (right symbol?) (branch-branch E?)]
-  
+
   ; unit
   [Unit]
-  
+
   ; sums
   [Inl (contents E?)]
   [Inr (contents E?)]
@@ -92,11 +92,11 @@
             (left-contents symbol?)  (left-branch E?)]
   [Inr-case (scrutinee E?)
             (right-contents symbol?)  (right-branch E?)]
-  
+
   ; nondeterminism
   [Par    (lhs E?) (rhs E?)]   ; new in a4
   [Choose (lhs E?) (rhs E?)]   ; new in a4
-  
+
   ; Do *not* add variants to this definition! (unless you're doing a bonus problem)
   )
 
@@ -105,15 +105,15 @@
 ; Parser for Fun expressions
 (define (parse sexp)
   (cond
-    [(number? sexp) (Num sexp)]    
-    
+    [(number? sexp) (Num sexp)]
+
     [(symbol? sexp)
      (case sexp
        [(Bfalse) (Bfalse)]
        [(Btrue)  (Btrue)]
        [(Unit)   (Unit)]
        [else     (Id sexp)])]
-    
+
     [(list? sexp)
      (let* ([head      (first sexp)]
             [args      (rest sexp)]
@@ -125,15 +125,15 @@
          [(+ - = <) (if (= arg-count 2)
                         (Binop (parse-op head) (parse (first args)) (parse (second args)))
                         (error "parse: operators need exactly 2 arguments"))]
-         
+
          [(Par) (if (= arg-count 2)
                     (Par (parse (first args)) (parse (second args)))
                     (error "parse: par needs exactly 2 arguments"))]
-         
+
          [(Choose) (if (= arg-count 2)
                        (Choose (parse (first args)) (parse (second args)))
                        (error "parse: choose needs exactly 2 arguments"))]
-         
+
          [(Let*) (case arg-count
                    [(0)  (error "parse: Let* with no body")]
                    [(1)  (parse (first args))]
@@ -149,13 +149,13 @@
                                 (error "parse: Let* needs a symbol")))
                           (error "parse: each Let* binding must be bracketed")))]
                    )]
-         
+
          [(Ite) (if (= arg-count 3)
                     (Ite (parse (first args))
-                         (parse (second args)) 
+                         (parse (second args))
                          (parse (third args)))
                     (error "parse needs exactly 3 arguments"))]
-         
+
          [(Lam) (cond
                   [(= arg-count 3)  (begin
                                       (printf "I think you're writing a type (~a) in Lam.  I'm ignoring it.~n" (second args))
@@ -167,11 +167,11 @@
                                         (Lam (first args) (parse (second args)))
                                         (error "parse: Lam must be followed by an identifier"))]
                   [else (error "parse: malformed `Lam'")])]
-         
+
          [(App) (if (= arg-count 2)
                     (App (parse (first args)) (parse (second args)))
                     (error "parse: App needs 1 function and 1 argument"))]
-         
+
          [(Rec) (cond
                   [(= arg-count 3)  (begin
                                       (printf "I think you're writing a type (~a) in Rec.  I'm ignoring it.~n" (second args))
@@ -180,7 +180,7 @@
                                         (Rec (first args) (parse (second args)))
                                         (error "parse: Rec must be followed by an identifier"))]
                   [else (error "parse: malformed `Rec'")])]
-         
+
          [(Let) (if (= arg-count 3)
                     (let ([name (first args)]
                           [named-sexp (second args)]
@@ -189,17 +189,17 @@
                           (Let name (parse named-sexp) (parse body-sexp))
                           (error "parse: malformed `Let'")))
                     (error "parse: malformed `Let'"))]
-         
+
          [(Pair) (if (= arg-count 2)
                      (Pair (parse (first args))
                            (parse (second args)))
                      (error "parse: malformed `Pair'"))]
-         
+
          [(Pair-case) (parse-pair-case arg-count args)]
-         
+
          [(Inl
            Inr)      (cond
-                       [(= arg-count 2)   (begin 
+                       [(= arg-count 2)   (begin
                                             (printf "I think you're writing a type (~a) in Inl/Inr.  I'm ignoring it.~n" (first args))
                                             (parse (list head (first args))))]
                        [(= arg-count 1)   (let ([variant (case head
@@ -207,31 +207,31 @@
                                                            [(Inr) Inr])])
                                             (variant (parse (first args))))]
                        [else (error "parse: malformed `Leaf'")])]
-         
+
          [(Sum-case) (parse-sum-case arg-count args)]
-         
+
          [(Inl-case
            Inr-case) (parse-single-sum-case head
                                             (case head [(Inl-case) 'Inl]
                                                        [(Inr-case) 'Inr])
                                             arg-count
                                             args)]
-         
+
          [(Leaf)     (cond
-                       [(= arg-count 1)   (begin 
+                       [(= arg-count 1)   (begin
                                             (printf "I think you're writing a type (~a) in Leaf.  I'm ignoring it.~n" (first args))
                                             (parse (list 'Leaf)))]
                        [(= arg-count 0)   (Leaf)]
                        [else (error "parse: malformed `Leaf'")])]
-         
+
          [(Branch)   (if (= arg-count 3)
                          (Branch (parse (first args)) (parse (second args)) (parse (third args)))
                          (error "parse: malformed `Branch'"))]
-         
+
          [(Tree-case) (parse-tree-case arg-count args)]
-         
+
          [else (error "parse: syntax error")]))]
-    
+
     [else (error "parse: syntax error")]))
 
 
@@ -250,43 +250,43 @@
 ;
 (define (parse-pair-case arg-count args)
   (if (= arg-count 2)
-      
+
       (let ([scrutinee (parse (first args))]
             [inner-sexp (second args)])
-        
+
         (if (and (list? inner-sexp)
                  (= (length inner-sexp) 4)
                  (symbol? (first inner-sexp))
                  (symbol? (second inner-sexp))
                  (symbol=? (third inner-sexp) '=>))
-            
+
             (let ([name1 (first inner-sexp)]
                   [name2 (second inner-sexp)]
                   [body (parse (fourth inner-sexp))])
-              
+
               (Pair-case scrutinee name1 name2 body))
-            
+
             (error "parse: malformed `Pair-case'")))
-      
+
       (error "parse: malformed `Pair-case'")))
 
 ; parse-tree-case : positive-integer (listof sexp) -> E
 ;
 (define (parse-tree-case arg-count args)
   (if (= arg-count 3)
-      
+
       (let ([scrutinee (parse (first args))]
             [leaf-branch-sexp (second args)]
             [branch-branch-sexp (third args)]
             )
-        
+
         (if (and (list? leaf-branch-sexp)
                  (= (length leaf-branch-sexp) 3)
                  (symbol=? (first leaf-branch-sexp) 'Leaf)
                  (symbol=? (second leaf-branch-sexp) '=>))
-            
+
             (let ([leaf-branch (parse (third leaf-branch-sexp))])
-              
+
               (if (and (list? branch-branch-sexp)
                        (= (length branch-branch-sexp) 6)
                        (symbol=? (first branch-branch-sexp) 'Branch)
@@ -294,12 +294,12 @@
                        (symbol? (third branch-branch-sexp))
                        (symbol? (fourth branch-branch-sexp))
                        (symbol=? (fifth branch-branch-sexp) '=>))
-                  
+
                   (let ([xKey (second branch-branch-sexp)]
                         [xL (third branch-branch-sexp)]
                         [xR (fourth branch-branch-sexp)]
                         [branch-branch (parse (sixth branch-branch-sexp))])
-                    
+
                     (Tree-case scrutinee leaf-branch xKey xL xR branch-branch))
                   (error "parse: malformed `Tree-case'")))
             (error "parse: malformed `Tree-case'")))
@@ -320,11 +320,11 @@
 ;
 (define (parse-sum-case arg-count args)
   (if (= arg-count 3)
-      
+
       (let ([scrutinee (parse (first args))]
             [inl-branch-sexp (second args)]
             [inr-branch-sexp (third args)])
-        
+
         (if (and (valid-sum-branch 'Inl inl-branch-sexp)
                  (valid-sum-branch 'Inr inr-branch-sexp))
             (let ([xL (second inl-branch-sexp)]
@@ -342,10 +342,10 @@
 ;               second argument is either 'Inl or 'Inr
 (define (parse-single-sum-case head head-word arg-count args)
   (if (= arg-count 2)
-      
+
       (let ([scrutinee (parse (first args))]
             [branch-sexp (second args)])
-        
+
         (if (valid-sum-branch head-word branch-sexp)
             (let ([x (second branch-sexp)]
                   [eBranch (parse (fourth branch-sexp))]
@@ -362,36 +362,36 @@
 (define (subst e2 x e1)
   (type-case E e1
     [Num (n) (Num n)]
-    
+
     [Bfalse () (Bfalse)]
-    
+
     [Btrue () (Btrue)]
-    
+
     [Let (y e eB)
          (if (symbol=? x y)
-             (Let x (subst e2 x e) eB) 
+             (Let x (subst e2 x e) eB)
              (Let y (subst e2 x e) (subst e2 x eB)))]
-    
+
     [Lam (y eB)
          (if (symbol=? x y)
              ; same symbol; if x appears inside eB, it refers to *this*
              ;  binding, not to the x we're replacing, so return same eB
-             (Lam x eB)      
-             
+             (Lam x eB)
+
              ; different symbol; leave y alone and replace inside eB
-             (Lam y (subst e2 x eB))             
+             (Lam y (subst e2 x eB))
              )]
-    
+
     [Binop (op eL eR)  (Binop op (subst e2 x eL)   (subst e2 x eR))]
     [App (eFun eArg)   (App      (subst e2 x eFun) (subst e2 x eArg))]
     [Par (eL eR)       (Par      (subst e2 x eL)   (subst e2 x eR))]
     [Choose (eL eR)    (Choose   (subst e2 x eL)   (subst e2 x eR))]
-    
+
     [Rec (y eB)     ; Rec binds y, so treat it the same way as Lam
          (if (symbol=? x y)
              (Rec x eB)
              (Rec y (subst e2 x eB)))]
-    
+
     [Ite (e left right)   (Ite (subst e2 x e)
                                (subst e2 x left)
                                (subst e2 x right))]
@@ -399,18 +399,18 @@
         (if (symbol=? x y)
             e2
             (Id y))]
-    
+
     [Pair (left right)   (Pair (subst e2 x left) (subst e2 x right))]
     [Pair-case (scrutinee name1 name2 body)
-               
-               (Pair-case (subst e2 x scrutinee) name1 name2 
+
+               (Pair-case (subst e2 x scrutinee) name1 name2
                           (if (or (symbol=? x name1) (symbol=? x name2))
                               body
                               (subst e2 x body)))]
-    
+
     [Leaf ()            (Leaf)]
     [Branch (ek eL eR)  (Branch (subst e2 x ek) (subst e2 x eL) (subst e2 x eR))]
-    
+
     [Tree-case (e eEmpty xkey xleft xright eBranch)
                (Tree-case (subst e2 x e)
                           (subst e2 x eEmpty)
@@ -422,12 +422,12 @@
                                   (symbol=? x xright))
                               eBranch
                               (subst e2 x eBranch)))]
-    
+
     [Unit ()            (Unit)]
-    
+
     [Inl (eL)           (Inl (subst e2 x eL))]
     [Inr (eR)           (Inr (subst e2 x eR))]
-    
+
     [Sum-case (e xL eLeft xR eRight)
               (Sum-case (subst e2 x e)
                         xL
@@ -439,7 +439,7 @@
                             eRight
                             (subst e2 x eRight))
                         )]
-    
+
     [Inl-case (e xL eLeft)
               (Inl-case (subst e2 x e)
                         xL
@@ -462,14 +462,14 @@
 (define (value? e)
   (type-case E e
     [Num (n)                  #true]
-    
+
     [Id  (x)     ; Won't happen during stepping, so it doesn't really matter what we put here.
          ; Still, I want Id to be a value:
          ;  we're using the value strategy, so whenever we substitute e2 for x in some
          ;  expression, the expression e2 that replaces x is always a value.
          ;  Since x is always replaced by a value, it makes sense to say that x is a value.
          #true]
-    
+
     [Bfalse ()                #true]
     [Btrue ()                 #true]
     [Lam (x eB)               #true]
@@ -479,11 +479,11 @@
     [Branch (eKey eL eR)      (and (value? eKey)
                                    (value? eL)
                                    (value? eR))]
-    
+
     [Unit ()                  #true]
     [Inl (eL)                 (value? eL)]
     [Inr (eR)                 (value? eR)]
-    
+
     [else                     #false]))
 
 
@@ -518,7 +518,7 @@
     [Minusop ()     (and (Num? v1) (Num? v2))]
     [Equalsop ()    (and (Num? v1) (Num? v2))]
     [Lessthanop ()  (and (Num? v1) (Num? v2))]
-    
+
     ; This code is redundant, but it makes it easy to match an operator with
     ; its valid arguments, and is easier to extend if we add operators whose
     ; arguments aren't numbers.
@@ -604,67 +604,73 @@
 ;
 (define (reduce e)
   (type-case E e
-    
+
     [Par (e1 e2)
          ; a4 Problem 4
-         #false  ; replace with your implementation of Step-par-left/Step-par-right
-         ]
-    
+         ; Step-par-left
+         (if (value? e1)
+           e1
+           ; Step-par-right
+           (if (value? e2)
+             e2
+             #f))]
+
     [Choose (e1 e2)
             ; a4 Problem 4
-         #false  ; replace with your implementation of Step-choose-left/Step-choose-right
-            ]
-    
+            (if (= (random 2) 0)
+              e1
+              e2)]
+
     [Ite (e eThen eElse)
-         
+
          (type-case E e
            [Btrue ()      eThen]   ; Step-ite-true
            [Bfalse ()     eElse]   ; Step-ite-false
            [else          #false]
            )]
-    
+
     [Binop (op e1 e2)   ; Step-binop
-           
+
            (if (and (value? e1) (value? e2))
-               
+
                (if (valid-binop op e1 e2)
                    (let ([v  (apply-binop op e1 e2)])
                      v)
                    (error "binop applied to invalid arguments"))
                #false)
            ]
-    
+
     [App (e1 e2)   ; Step-app-value
-         
+
          (if (and (Lam? e1) (value? e2))
              (subst e2 (Lam-name e1) (Lam-body e1))
              #false)
          ]
-    
+
     [Let (x e1 e2)   ; Step-let
          (if (value? e1)
              (subst e1 x e2)
              #false)
          ]
-    
+
     [Rec (u e)        ; Step-rec
          (subst (Rec u e) u e)]
-    
+
     [Pair-case (ePair x1 x2 eBody)
                (and (value? ePair)
                     (type-case E ePair
                       [Pair (v1 v2)   (subst v2 x2 (subst v1 x1 eBody))]
                       [else #false]))]
-    
+
     ; [Branch (eKey eL eR)]
     [Tree-case (eTree eLeaf xKey xL xR eBranch)
-               
+
                (and (value? eTree)
                     (type-case E eTree
                       [Leaf   ()
                               ; Step-tree-case-leaf
                               eLeaf]
-                      
+
                       [Branch (vKey vL vR)   ; (value? eTree) = #true, so vKey/vL/vR are values
                               ; Step-tree-case-branch
                               (subst vR xR
@@ -673,9 +679,33 @@
                                                    eBranch)))]
                       [else  #false]))
                ]
-    
+
     ; a4 Problem 3:
-    ;
+    ; Step-sum
+    [Sum-case (eSum xL eL xR eR)
+              (and (value? eSum)
+                   (type-case E eSum
+                              ; Step-sum-case-inl
+                              [Inl (v)
+                                   (subst v xL eL)]
+                              ; Step-sum-case-inr
+                              [Inr (v)
+                                   (subst v xR eR)]
+                              [else #false]))]
+    ; Step-inl-case
+    [Inl-case (eSum xL eL)
+              (and (value? eSum)
+                   (type-case E eSum
+                              [Inl (v)
+                                   (subst v xL eL)]
+                              [else #false]))]
+    ; Step-inr-case
+    [Inr-case (eSum xL eL)
+              (and (value? eSum)
+                   (type-case E eSum
+                              [Inr (v)
+                                   (subst v xL eL)]
+                              [else #false]))]
     ; Implement the rules Step-sum-case-inl,
     ;                     Step-sum-case-inr,
     ;                     Step-inl-case,
@@ -683,7 +713,7 @@
 
     [Id (x)
         (error "free-variable")]
-    
+
     [else
      #false]
     ))
@@ -701,7 +731,7 @@
    ;    (You will implement: Step-par-left, Step-par-right,
    ;                         Step-choose-left, Step-choose-right.)
    (reduce e)
-   
+
    ; If we get this far in the (or ...), it means that (reduce e) = #false.
    ; That means we couldn't apply any reduction rules to the whole expression.
    ;
@@ -719,7 +749,7 @@
                             (Binop op e1 s2)
                             #false))
                       #false)))]
-     
+
      [App (e1 e2)
           (let ([s1 (step e1)])
             (if s1
@@ -730,18 +760,18 @@
                           (App e1 s2)    ; C ::= (App v C)
                           #false))
                     #false)))]
-     
+
      [Let (x e1 eB)
           (let ([s1 (step e1)])
             (if s1
                 (Let x s1 eB)    ; C ::= (Let x C eB)
                 #false))]
-     
+
      [Ite (e eThen eElse)
           (let ([s (step e)])              ; C ::= (Ite C eThen eElse)
             (and s
                  (Ite s eThen eElse)))]
-     
+
      [Pair (eL eR)
            (let ([sL (step eL)])
              (if sL
@@ -751,13 +781,13 @@
                         (and sR
                              (Pair eL sR)    ; C ::= (Pair v C)
                              )))))]
-     
+
      [Pair-case (ePair xL xR eBody)
                 (let ([sPair (step ePair)])
                   (if sPair
                       (Pair-case sPair xL xR eBody)  ; C ::= (Pair-case C x x e)
                       #false))]
-     
+
      [Branch (eKey eL eR)
              (let ([sKey (step eKey)])
                (if sKey
@@ -772,13 +802,13 @@
                                          (Branch eKey eL sR)  ; C ::= (Branch v v C)
                                          #false))))))))
              ]
-     
+
      [Tree-case (eTree eLeaf xKey xL xR eBranch)
                 (let ([sTree (step eTree)])
                   (if sTree                      ; C ::= (Tree-case C e x x x e)
                       (Tree-case sTree eLeaf xKey xL xR eBranch)
                       #false))]
-     
+
      [Inl (eL)
           (let ([sL (step eL)])
             (and sL                              ; C ::= (Inl C)
@@ -787,7 +817,7 @@
           (let ([sR (step eR)])
             (and sR                              ; C ::= (Inr C)
                  (Inr sR)))]
-     
+
      ; Sum-case, Inl-case, Inr-case all work in essentially the same way:
      ; the "scrutinee" (eSum) can step, but no other subexpressions can step.
      [Sum-case (eSum xL eL xR eR)
@@ -795,7 +825,7 @@
                  (if sSum                        ; C ::= (Sum-case C x e x e)
                      (Sum-case sSum xL eL xR eR)
                      #false))]
-     
+
      [Inl-case (eSum xL eL)
                (let ([sSum (step eSum)])
                  (if sSum                        ; C ::= (Inl-case C x e)
@@ -806,17 +836,19 @@
                  (if sSum                         ; C ::= (Inr-case C x e)
                      (Inr-case sSum xR eR)
                      #false))]
-     
+
      [Par (e1 e2)
           ; The call to reduce, above, returned #false;
           ; therefore (once you've implemented the missing code in reduce),
           ; neither e1 nor e2 is a value.
-             #false   ; a4 Problem 4
-          ]
-     
+          ; a4 Problem 4
+          (if (= (random 2) 0)
+            (Par (step e1) e2)
+            (Par e1 (step e2)))]
+
      ; NOTE: no branch for Choose, since it doesn't appear
      ;  in the grammar of evaluation contexts C
-     
+
      [else  #false]
      )))
 
@@ -842,7 +874,7 @@
         [Num (n)                   n]
         [Binop (op e1 e2)          `(,(unparse-op op) ,(unparse e1) ,(unparse e2))]
         [Id (x)                    x]
-        [Let (x e1 eB)             `(Let ,x ,(unparse e1) ,(unparse eB))] 
+        [Let (x e1 eB)             `(Let ,x ,(unparse e1) ,(unparse eB))]
         [Lam (x   body)            `(Lam ,x                   ,(unparse body))]
         [App (e1 e2)               `(App ,(unparse e1) ,(unparse e2))]
         [Par (e1 e2)               `(Par ,(unparse e1) ,(unparse e2))]
@@ -851,17 +883,17 @@
         [Bfalse ()                 `Bfalse]
         [Btrue ()                  `Btrue]
         [Ite (e e1 e2)             `(Ite ,(unparse e) ,(unparse e1) ,(unparse e2))]
-        
+
         [Pair (e1 e2)              `(Pair ,(unparse e1) ,(unparse e2))]
         [Pair-case (e x1 x2 body)  `(Pair-case ,(unparse e) (,x1 ,x2 => ,(unparse body)))]
-        
+
         [Leaf ( )                  `(Leaf                )]
         [Branch (eKey eL eR)       `(Branch ,(unparse eKey) ,(unparse eL) ,(unparse eR))]
         [Tree-case (e eLeaf xk xl xr eBranch)
                    `(Tree-case ,(unparse e)
                                (Leaf               => ,(unparse eLeaf))
                                (Branch ,xk ,xl ,xr => ,(unparse eBranch)))]
-        
+
         [Unit ()                   `Unit]
         [Inl (eL)                  `(Inl ,(unparse eL))]
         [Inr (eR)                  `(Inr ,(unparse eR))]
@@ -891,7 +923,7 @@
 
 #|
   Problem 5
-  
+
   Replace the concrete syntax {+ 1 1}, etc. with your solution.
   Or remove the calls to parse, and build abstract syntax directly.
 |#
@@ -937,8 +969,7 @@
                        {App repeat {Lam z {+ z z}}}}
                  )))
 
-; The next block of examples won't work until you 
-#|
+; The next block of examples won't work until you
 (unparse (steps (parse
                  '{Choose {Choose 1 2} {Choose 3 4}})))
 
@@ -969,26 +1000,26 @@
                              {App {Lam x 2} 0}}}}
            )
           10)
-|#
 
 ;
 ; Examples with trees and sums
 ;
 (steps (parse '{Tree-case {Branch 99 {Leaf} {Leaf}} {Leaf => 1} {Branch key l r => key}}))
 
-#|
 ; Uncomment this part to test your Problem 3 code
 
-(steps (parse '{Sum-case {App {Lam z {Inl z}} 50}
-                         {Inl l => {+ l 10}}
-                         {Inr r => {- r 10}}}))
-(steps (parse '{Sum-case {Inr {+ 2 2}}
-                         {Inl l => {+ l 10}}
-                         {Inr r => {- r 10}}}))
+(test (steps (parse '{Sum-case {App {Lam z {Inl z}} 50}
+                    {Inl l => {+ l 10}}
+                    {Inr r => {- r 10}}}))
+      (Num 60))
+(test (steps (parse '{Sum-case {Inr {+ 2 2}}
+                    {Inl l => {+ l 10}}
+                    {Inr r => {- r 10}}}))
+      (Num -6))
 
-(steps (parse '{Inr-case {Inr {+ 2 {- 5 1}}} {Inr yy => yy}}))
+(test (steps (parse '{Inr-case {Inr {+ 2 {- 5 1}}} {Inr yy => yy}}))
+      (Num 6))
 
-|#
 
 #| Commented-out example.  Printing all the steps takes a while...
 (steps (parse '{Let* {AND {Lam p {Lam q {Ite p q Bfalse}}}}
@@ -1003,7 +1034,7 @@
                      {trueXORfalse  {App {App XOR Btrue} Bfalse}}
                      {falseXORtrue  {App {App XOR Bfalse} Btrue}}
                      {falseXORfalse {App {App XOR Bfalse} Bfalse}}
-                      
+
                      {Pair {Pair trueXORtrue trueXORfalse}
                            {Pair falseXORtrue falseXORfalse}}}
               ))
@@ -1026,7 +1057,7 @@
                      {trueXORfalse  {App {App XOR t} f}}
                      {falseXORtrue  {App {App XOR f} t}}
                      {falseXORfalse {App {App XOR f} f}}
-                      
+
                      {Pair {Pair trueXORtrue trueXORfalse}
                            {Pair falseXORtrue falseXORfalse}}}
               ))
