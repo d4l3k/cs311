@@ -927,7 +927,7 @@
   Replace the concrete syntax {+ 1 1}, etc. with your solution.
   Or remove the calls to parse, and build abstract syntax directly.
 |#
-(define part5a-e1 (parse '{+ 1 1}))
+(define part5a-e1 (parse '{Rec u u}))
 
 (define part5a-e2 (parse '{+ 2 2}))
 
@@ -948,22 +948,29 @@
    If you think no such expressions e3, e4 exist,
    explain why here:
 
+For (Choose e3 e4) to always converge, both e3 and e4 must converge when
+executed seperately. When (Par e3 e4) runs, it will randomly step e3 and e4
+until one of them converges. Since we know e3 and e4 converge, (Par e3 e4) must
+also converge. Thus, there are no such expressions such that (Choose e3 e4)
+converges and (Par e3 e4) does not.
+
 
    (Part 5b)
 |#
 
-#|
 ; Save before you try these...
 
+#|
 ; test 5a:
-  (try-some (Par e1 e2) 10)
-  (try-some (Choose e1 e2) 10)
+  (try-some (Par part5a-e1 part5a-e2) 10)
+  (try-some (Choose part5a-e1 part5a-e2) 10)
 
 ; test 5b:
   (try-some (Choose e3 e4) 20)
   (try-some (Par e3 e4) 5)
 |#
 
+#|
 (unparse (steps (parse
                  '{Let repeat {Lam f {Lam x {App f {App f x}}}}
                        {App repeat {Lam z {+ z z}}}}
@@ -1000,10 +1007,12 @@
                              {App {Lam x 2} 0}}}}
            )
           10)
+|#
 
 ;
 ; Examples with trees and sums
 ;
+#|
 (steps (parse '{Tree-case {Branch 99 {Leaf} {Leaf}} {Leaf => 1} {Branch key l r => key}}))
 
 ; Uncomment this part to test your Problem 3 code
@@ -1019,6 +1028,7 @@
 
 (test (steps (parse '{Inr-case {Inr {+ 2 {- 5 1}}} {Inr yy => yy}}))
       (Num 6))
+|#
 
 
 #| Commented-out example.  Printing all the steps takes a while...
