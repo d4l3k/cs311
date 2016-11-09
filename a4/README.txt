@@ -25,7 +25,7 @@ Signed: Tristan Rice
 
 Please fill in each of the following:
 
-Approximate hours on this assignment: TODO
+Approximate hours on this assignment: 2
 
 Acknowledgment of assistance (per the collab policy!): None
 
@@ -35,13 +35,14 @@ For teams, rough breakdown of work: N/A
 
 
 What's something cool, interesting, frustrating, or tangentially relevant that this assignment made you think about?
-TODO
+I spent some time thinking about the optimal way to write tests for
+non-deterministic code.
 
 What was the best part of this assignment?
-TODO
+The coding.
 
 What was the worst part of this assignment?
-TODO
+The part where I had to hand something in on paper.
 
 
 
