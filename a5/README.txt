@@ -25,7 +25,7 @@ Signed: Tristan Rice
 
 Plese fill in each of the following:
 
-Approximate hours on this assignment: 5
+Approximate hours on this assignment: 3
 
 Acknowledgment of assistance (per the collab policy!): NONE
 
@@ -35,17 +35,17 @@ For teams, rough breakdown of work: N/A
 
 
 What's something cool, interesting, frustrating, or tangentially relevant that this assignment made you think about?
-TODO
+
+It's kind of interesting thinking about the best way to test that certain code
+get "infinitely" loops. It's impossible to actually prove due to the halting
+problem, but an infinite loop breaks most unit test environments.
 
 What was the best part of this assignment?
-TODO
+
+Being able to see how the execution flows with loops and begin statements.
 
 What was the worst part of this assignment?
-TODO
 
-
-
-TODO: Document any additional issues about your submission you feel
-might be important.
+Figuring out how to implement the logic for problem 3.
 
 
