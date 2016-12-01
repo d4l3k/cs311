@@ -35,11 +35,12 @@ For teams, rough breakdown of work: N/A
 
 
 What's something cool, interesting, frustrating, or tangentially relevant that this assignment made you think about?
-TODO
+If you could have these assignments without an interp function. Just the type
+checking code. It'd be weird to think about just having a type checking engine.
 
 What was the best part of this assignment?
-TODO
+Recursive types.
 
 What was the worst part of this assignment?
-TODO
+Figuring out how to synthesise a sum type when there are no rules to do so.
 
