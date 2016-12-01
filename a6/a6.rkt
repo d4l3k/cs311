@@ -71,7 +71,7 @@
   [Tunit]
   [T+       (left Type?)   (right Type?)]
   [Tmu      (a symbol?)    (t  (and/c Type? (not/c Tvar?)))]
-  
+
   ; For bonus problem
   [Tsect    (left Type?)   (right Type?)]
   )
@@ -91,39 +91,39 @@
 ; Abstract syntax of E (Fun expressions):
 (define-type E
   [Anno (e E?) (t Type?)]
-  
+
   ; numbers
   [Num (n number?)]
   [Binop (op Op?) (lhs E?) (rhs E?)]
-  
+
   ; binding
   [Let (name symbol?) (named-expr E?) (body E?)]
   [Id (name symbol?)]
   ;  [Let* (bindings (listof Binding?)) (body E?)]
-  
+
   ; functions
   [Lam (name symbol?) (body E?)]
   [App (function E?) (argument E?)]
-  
+
   ; recursion
   [Rec (name symbol?) (body E?)]
-  
+
   ; booleans
   [Bfalse]
   [Btrue]
   [Ite (b E?) (then-branch E?) (else-branch E?)]
-  
+
   ; pairs
   [Pair (left E?) (right E?)]
   [Pair-case (scrutinee E?) (name1 symbol?) (name2 symbol?) (body E?)]
-  
+
   ; polymorphism
   [All (tyvar symbol?) (body E?)]
   [At (poly-expr E?) (instance Type?)]
-  
+
   ; unit
   [Unit]
-  
+
   ; sums
   [Inl (contents E?)]
   [Inr (contents E?)]
@@ -147,15 +147,15 @@
 ; Parser for Fun expressions
 (define (parse sexp)
   (cond
-    [(number? sexp) (Num sexp)]    
-    
+    [(number? sexp) (Num sexp)]
+
     [(symbol? sexp)
      (case sexp
        [(Bfalse) (Bfalse)]
        [(Btrue)  (Btrue)]
        [(Unit)   (Unit)]
        [else     (Id sexp)])]
-    
+
     [(list? sexp)
      (let* ([head      (first sexp)]
             [args      (rest sexp)]
@@ -167,7 +167,7 @@
          [(+ - = <) (if (= arg-count 2)
                         (Binop (parse-op head) (parse (first args)) (parse (second args)))
                         (error "parse: operators need exactly 2 arguments"))]
-         
+
          [(Let*) (case arg-count
                    [(0)  (error "parse: Let* with no body")]
                    [(1)  (parse (first args))]
@@ -179,23 +179,23 @@
                                          (list (cons 'Let* (rest args)))))
                           (error "parse: each Let* binding must be bracketed")))]
                    )]
-         
+
          [(Ite) (if (= arg-count 3)
                     (Ite (parse (first args))
-                         (parse (second args)) 
+                         (parse (second args))
                          (parse (third args)))
                     (error "parse needs exactly 3 arguments"))]
-         
+
          [(Lam) (if (= arg-count 2)
                     (if (symbol? (first args))
                         (Lam (first args) (parse (second args)))
                         (error "parse: Lam must be followed by an identifier"))
                     (error "parse: malformed `Lam'"))]
-         
+
          [(App) (if (= arg-count 2)
                     (App (parse (first args)) (parse (second args)))
                     (error "parse: App needs 1 function and 1 argument"))]
-         
+
          [(Rec) (case arg-count
                   [(2)  (if (symbol? (first args))
                             (Rec (first args) (parse (second args)))
@@ -204,7 +204,7 @@
                                    (parse (third args)))
                               (parse-type (second args)))]
                   [else (error "parse: malformed `Rec'")])]
-         
+
          [(Let) (case arg-count
                   [(3)
                    (let ([name (first args)]
@@ -225,36 +225,36 @@
                               (parse body-sexp))
                          (error "parse: malformed `Let'")))]
                   [else (error "parse: malformed `Let'")])]
-         
+
          [(Pair) (if (= arg-count 2)
                      (Pair (parse (first args))
                            (parse (second args)))
                      (error "parse: malformed `pair'"))]
-         
+
          [(Pair-case) (parse-pair-case arg-count args)]
-         
+
          [(Anno) (if (= arg-count 2)
                      (let ([body (parse (first args))]
                            [type (parse-type (second args))])
                        (Anno body type))
                      (error "parse: malformed `Anno'"))]
-         
+
          [(All) (if (or (< arg-count 2) (not (symbol? (first args))))
                     (error "parse: malformed `All'")
                     (if (= arg-count 2)
                         (All (first args) (parse (second args)))
                         (All (first args) (parse (cons 'All (rest args))))
                         ))]
-         
+
          [(At) (if (= arg-count 2)
                    (let ([body (parse (first args))]
                          [type (parse-type (second args))])
                      (At body type))
                    (error "parse: malformed `At'"))]
-         
+
          [(Inl
            Inr)      (cond
-                       [(= arg-count 2)   (begin 
+                       [(= arg-count 2)   (begin
                                             (printf "I think you're writing a type (~a) in Inl/Inr.  I'm ignoring it.~n" (first args))
                                             (parse (list head (first args))))]
                        [(= arg-count 1)   (let ([variant (case head
@@ -262,11 +262,11 @@
                                                            [(Inr) Inr])])
                                             (variant (parse (first args))))]
                        [else (error "parse: malformed `Leaf'")])]
-         
+
          [(Sum-case) (parse-sum-case arg-count args)]
-         
+
          [else (error "parse: syntax error")]))]
-    
+
     [else (error "parse: syntax error")]))
 
 ; valid-sum-branch : symbol sexp -> boolean
@@ -284,11 +284,11 @@
 ;
 (define (parse-sum-case arg-count args)
   (if (= arg-count 3)
-      
+
       (let ([scrutinee (parse (first args))]
             [inl-branch-sexp (second args)]
             [inr-branch-sexp (third args)])
-        
+
         (if (and (valid-sum-branch 'Inl inl-branch-sexp)
                  (valid-sum-branch 'Inr inr-branch-sexp))
             (let ([xL (second inl-branch-sexp)]
@@ -304,22 +304,22 @@
 ;
 (define (parse-pair-case arg-count args)
   (if (= arg-count 2)
-      
+
       (let ([scrutinee (parse (first args))]
             [inner-sexp (second args)])
-        
+
         (if (and (list? inner-sexp)
                  (= (length inner-sexp) 4)
                  (symbol=? (third inner-sexp) '=>))
-            
+
             (let ([name1 (first inner-sexp)]
                   [name2 (second inner-sexp)]
                   [body (parse (fourth inner-sexp))])
-              
+
               (Pair-case scrutinee name1 name2 body))
-            
+
             (error "parse: malformed `Pair-case'")))
-      
+
       (error "parse: malformed `Pair-case'")))
 
 (define (build-> types)
@@ -345,7 +345,7 @@
              ([head      (first sexp)]
               [args      (rest sexp)]
               [arg-count (length args)])
-           
+
            (case head
              [(*)    (T* (parse-type (first args))
                          (parse-type (second args)))]
@@ -359,11 +359,11 @@
              [(mu)   (if (and (= 2 arg-count) (symbol? (first args)))
                          (Tmu (first args) (parse-type (second args)))
                          (error "invalid arguments for Tmu"))]
-             
+
              ; For bonus problem
              [(sect) (Tsect (parse-type (first args))
                             (parse-type (second args)))]
-             
+
              [else   (error "unknown type constructor " head)])))]
     [else (error "unknown animal in type")]))
 
@@ -400,9 +400,9 @@
     [Tmu  (b B0)     (if (symbol=? a b)
                          #f
                          (free? a B0))]
-    
+
     ; For bonus problem
-    [Tsect (B1 B2)   (or (free? a B1) (free? a B2))]    
+    [Tsect (B1 B2)   (or (free? a B1) (free? a B2))]
     ))
 
 ; type-subst : Typing-context Type symbol Type -> Type
@@ -423,7 +423,7 @@
       [T+  (B1 B2)   (T+  (self B1) (self B2))]
       [T-> (B1 B2)   (T-> (self B1) (self B2))]
       [Tall (b B0)
-            (if (symbol=? a b) 
+            (if (symbol=? a b)
                 (Tall b B0)
                 (if (free? b A)
                     (let* ([fresh-b    (fresh-tyvar context b)]
@@ -438,7 +438,7 @@
                          A
                          (Tvar b))]
       [Tmu (b B0)
-           (if (symbol=? a b) 
+           (if (symbol=? a b)
                (Tmu b B0)
                (if (free? b A)
                    (let* ([fresh-b    (fresh-tyvar context b)]
@@ -448,7 +448,7 @@
                                               a
                                               B0-renamed)))
                    (Tmu b (self B0))))]
-      
+
       ; For bonus problem
       [Tsect (B1 B2) (Tsect (self B1) (self B2))]
       )))
@@ -483,23 +483,23 @@
           [else
            (type-case Type A
              ; [Tbool () handled by else branch]
-             [T* (A1 A2)   (type-case Type B 
+             [T* (A1 A2)   (type-case Type B
                              [T* (B1 B2) (and (subtype? context A1 B1)
                                               (subtype? context A2 B2))]
                              [else #f])]
-             
-             [T+ (A1 A2)   (type-case Type B 
+
+             [T+ (A1 A2)   (type-case Type B
                              [T+ (B1 B2) (and (subtype? context A1 B1)
                                               (subtype? context A2 B2))]
                              [else #f])]
-             
-             [T-> (A1 A2)  (type-case Type B 
+
+             [T-> (A1 A2)  (type-case Type B
                              [T-> (B1 B2) (and (subtype? context B1 A1)  ; contravariant
                                                (subtype? context A2 B2))]
                              [else #f])]
-             
+
              [Tmu (a A0)   (subtype? context (type-subst context A a A0) B)]
-             
+
              [else #f])]))))
 
 ; op-signature : Op -> listof Type
@@ -508,11 +508,11 @@
   (let* ([rat*rat        (T* (Trat) (Trat))]
          [int*int        (T* (Tint) (Tint))]
          [pos*pos        (T* (Tpos) (Tpos))]
-         
+
          [rat*rat->rat   (T-> rat*rat (Trat))]
          [int*int->int   (T-> int*int (Tint))]
          [pos*pos->pos   (T-> pos*pos (Tpos))]
-         
+
          [rat*rat->bool  (T-> rat*rat (Tbool))])
     (type-case Op op
       [Plusop ()     (list pos*pos->pos int*int->int rat*rat->rat)]
@@ -553,7 +553,7 @@
     [Anno (e0 A0)     ; Synth-anno
           (and  (check context e0 A0)
                 A0)]
-    
+
     [Num (n)
          (if (not (rational? n))   ; sadly, even Racket's definition of rational is interesting
              #false
@@ -563,36 +563,39 @@
                      (Tint)                 ; Synth-int
                      (Tpos)))               ; Synth-pos
              )]
-    
+
     [Pair (e1 e2)                           ; Synth-pair
           (let ([A1 (synth context e1)]
                 [A2 (synth context e2)])
             (and A1
                  A2
                  (T* A1 A2)))]
-    
+
     [Binop (op e1 e2)    ; Synth-binop, roughly
            (type-binop context e1 e2 (op-signature op))
            ]
-    
+
     [Id (x)  ; Synth-var
         (look-up-type context x)]
-    
+
     [Let (x e1 eB)     ; Synth-let
          (let ([A1 (synth context e1)])
            (and A1
                 (synth (tc/cons-tp x A1 context) eB)))]
-    
+
     [App (eFun eArg)   ; Synth-app
          (let ([Afun (synth context eFun)])
            (type-case Type Afun
              [T-> (A B)   (and (check context eArg A)
                                B)]
              [else #false]))]
-    
+
     [Bfalse ()        (Tbool)]   ; Synth-btrue
     [Btrue ()         (Tbool)]   ; Synth-bfalse
-    
+
+    [Inl (e) (T+ (synth context e) (Tunit))]
+    [Inr (e) (T+ (Tunit) (synth context e))]
+
     [At (e Ainstance)   ; Synth-at
         (let ([A (synth context e)])
           (and A
@@ -600,9 +603,9 @@
                  [Tall (b B0)
                        (type-subst context Ainstance b B0)]
                  [else #false])))]
-    
+
     [Unit ()          (Tunit)]   ; Synth-unit
-    
+
     [else             (error "can't synthesize type for " e)]))
 
 ; synth : Typing-context E -> (or false Type)
@@ -615,8 +618,12 @@
 ; Currently it doesn't try to use Synth-mu; that's part of Problem 2b.
 ;
 (define (synth context e)
-  (inner-synth context e)
-  )
+  (let ([A (inner-synth context e)])
+    (and A
+         (type-case Type A
+                    [Tmu (b B)
+                         (type-subst context A b B)]
+                    [else A]))))
 
 ; check : Typing-context E Type -> boolean
 ;
@@ -627,48 +634,50 @@
 (define (check context e A)
   (printf "check ~a <= ~a~n" (unparse e) (unparse-type A))
   (type-case Type A
-    [else 
+    [Tmu (b B)
+         (check context e (type-subst context A b B))]
+    [else
      (type-case E e
        [Lam (x eBody)             ; Check-lam
             (type-case Type A
               [T-> (A1 A2)
                    (check (tc/cons-tp x A1 context) eBody A2)]
               [else #false])]
-       
+
        [Rec (u e0)                ; Check-rec
             (check (tc/cons-tp u A context) e0 A)]
-       
+
        [Let (x e1 eB)             ; Check-let
             (let ([A1 (synth context e1)])
               (and A1
                    (check (tc/cons-tp x A1 context)
                           eB
                           A)))]
-       
+
        [Pair (e1 e2)              ; Check-pair
              (type-case Type A
                [T*  (A1 A2)
                     (and (check context e1 A1)
                          (check context e2 A2))]
-               [else #false])]    
-       
+               [else #false])]
+
        [Inl (eL)                  ; Check-inl
             (type-case Type A
               [T+ (A1 A2)
                   (check context eL A1)]
               [else #false])]
-       
+
        [Inr (eR)                  ; Check-inr
             (type-case Type A
               [T+ (A1 A2)
                   (check context eR A2)]
               [else #false])]
-       
+
        [Ite (scrutinee then-branch else-branch)     ; Check-ite
             (and (check context scrutinee (Tbool))
                  (check context then-branch A)
                  (check context else-branch A))]
-       
+
        [Pair-case (scrutinee x1 x2 body)            ; Check-pair-case
                   (let ([APair (synth context scrutinee)])
                     (and APair
@@ -677,8 +686,8 @@
                                (let ([context-x1-x2  (tc/cons-tp x2 A2 (tc/cons-tp x1 A1 context))])
                                  (check context-x1-x2 body A))]
                            [else #false])))]
-       
-       
+
+
        [All (a e)                 ; Check-all
             (type-case Type A
               [Tall (b B)
@@ -686,7 +695,17 @@
                           [context-a (tc/cons-tyvar a context)])
                       (check context-a e A))]
               [else #false])]
-       
+
+       [Sum-case (e x1 e1 x2 e2)
+                 (let ([ASum (synth context e)])
+                   (and ASum
+                        (type-case Type ASum
+                                   [T+ (A1 A2)
+                                       (and (check (tc/cons-tp x1 A1 context) e1 A)
+                                            (check (tc/cons-tp x2 A2 context) e2 A))]
+                                   [else #f])))]
+
+
        [else   ; can't use any of the Check- rules that need a specific kind of expression,
         ;  so try Check-sub, which potentially works on any kind of expression
         (let ([Asynth (synth context e)])
@@ -701,34 +720,34 @@
 (define (subst e2 x e1)
   (type-case E e1
     [Num (n) (Num n)]
-    
+
     [Bfalse () (Bfalse)]
-    
+
     [Btrue () (Btrue)]
-    
+
     [Let (y e eB)
          (if (symbol=? x y)
-             (Let x (subst e2 x e) eB) 
+             (Let x (subst e2 x e) eB)
              (Let y (subst e2 x e) (subst e2 x eB)))]
-    
+
     [Lam (y eB)
          (if (symbol=? x y)
              ; same symbol; if x appears inside eB, it refers to *this*
              ;  binding, not to the x we're replacing, so return same eB
-             (Lam x eB)      
-             
+             (Lam x eB)
+
              ; different symbol; leave y alone and replace inside eB
-             (Lam y (subst e2 x eB))             
+             (Lam y (subst e2 x eB))
              )]
-    
+
     [Binop (op eL eR)  (Binop op (subst e2 x eL)   (subst e2 x eR))]
     [App (eFun eArg)   (App      (subst e2 x eFun) (subst e2 x eArg))]
-    
+
     [Rec (y eB)     ; Rec binds y, so treat it the same way as Lam
          (if (symbol=? x y)
              (Rec x eB)
              (Rec y (subst e2 x eB)))]
-    
+
     [Ite (e left right)   (Ite (subst e2 x e)
                                (subst e2 x left)
                                (subst e2 x right))]
@@ -736,25 +755,25 @@
         (if (symbol=? x y)
             e2
             (Id y))]
-    
+
     [Pair (left right)   (Pair (subst e2 x left) (subst e2 x right))]
     [Pair-case (scrutinee name1 name2 body)
-               
-               (Pair-case (subst e2 x scrutinee) name1 name2 
+
+               (Pair-case (subst e2 x scrutinee) name1 name2
                           (if (or (symbol=? x name1) (symbol=? x name2))
                               body
                               (subst e2 x body)))]
-    
+
     [Anno (e t)  (Anno (subst e2 x e) t)]
     [At (e t)    (At (subst e2 x e) t)]
-    
+
     [All (a e)   (All a (subst e2 x e))]
-    
+
     [Unit ()            (Unit)]
-    
+
     [Inl (eL)           (Inl (subst e2 x eL))]
     [Inr (eR)           (Inr (subst e2 x eR))]
-    
+
     [Sum-case (e xL eLeft xR eRight)
               (Sum-case (subst e2 x e)
                         xL
@@ -775,26 +794,26 @@
 (define (value? e)
   (type-case E e
     [Num (n)                  #true]
-    
+
     [Id  (x)     ; Won't happen during stepping, so it doesn't really matter what we put here.
          ; Still, I want Id to be a value:
          ;  we're using the value strategy, so whenever we substitute e2 for x in some
          ;  expression, the expression e2 that replaces x is always a value.
          ;  Since x is always replaced by a value, it makes sense to say that x is a value.
          #true]
-    
+
     [Bfalse ()                #true]
     [Btrue ()                 #true]
     [Lam (x eB)               #true]
     [Pair (e1 e2)             (and (value? e1)
                                    (value? e2))]
-    
+
     [Unit ()                  #true]
     [Inl (eL)                 (value? eL)]
     [Inr (eR)                 (value? eR)]
-    
+
     [Anno (e A)               (value? e)]
-    
+
     [else                     #false]))
 
 ; racket-boolean-to-Fun-boolean : bool? -> E?
@@ -822,7 +841,7 @@
     [Minusop ()     (and (Num? v1) (Num? v2))]
     [Equalsop ()    (and (Num? v1) (Num? v2))]
     [Lessthanop ()  (and (Num? v1) (Num? v2))]
-    
+
     ; This code is redundant, but it makes it easy to match an operator with
     ; its valid arguments, and is easier to extend if we add operators whose
     ; arguments aren't numbers.
@@ -859,13 +878,13 @@
 ;                e ⇓ v
 (define (interp e)
   (type-case E e
-    
+
     [Num (n)     (Num n)]
     [Lam (x eB)  (Lam x eB)]
     [Bfalse ()   (Bfalse)]
     [Btrue ()    (Btrue)]
     [Unit ()     (Unit)]
-    
+
     [App (e1 e2)
          (let ([v1 (interp e1)])
            (type-case E v1
@@ -875,11 +894,11 @@
                     v)]
              [else (error "tried to Apply non-Lam")]
              ))]
-    
+
     [Rec (u eB)
          (let ([v (interp (subst (Rec u eB) u eB))])
            v)]
-    
+
     [Binop (op e1 e2)
            (let* ([v1 (interp e1)]
                   [v2 (interp e2)])
@@ -887,53 +906,53 @@
                  (let ([v  (apply-binop op v1 v2)])
                    v)
                  (error "Binop Applied to invalid arguments")))]
-    
+
     [Ite (eCond eThen eElse)
          (let ([vCond (interp eCond)])
            (type-case E vCond
              [Btrue ()   (interp eThen)]
              [Bfalse ()  (interp eElse)]
              [else (error "Ite on a non-boolean")]))]
-    
+
     [Pair (e1 e2)
           (let ([v1  (interp e1)]
                 [v2  (interp e2)])
             (Pair v1 v2))]
-    
+
     [Pair-case (ePair x1 x2 eB)
                (let ([vPair  (interp ePair)])
                  (type-case E vPair
                    [Pair (v1 v2)  (interp (subst v2 x2 (subst v1 x1 eB)))]
                    [else (error "Pair-case on a non-Pair")]))]
-    
+
     [Inl (e0)
          (let ([v0  (interp e0)])
            (Inl v0))]
-    
+
     [Inr (e0)
          (let ([v0  (interp e0)])
            (Inr v0))]
-    
+
     [Sum-case (eSum xL eL xR eR)
               (let ([vSum  (interp eSum)])
                 (type-case E vSum
                   [Inl (vL)  (interp (subst vL xL eL))]
                   [Inr (vR)  (interp (subst vR xR eR))]
                   [else (error "Sum-case on a non-sum")]))]
-    
+
     [Let (x e1 e2)
          (let* ([v1 (interp e1)]
                 [v2 (interp (subst v1 x e2))])
            v2)]
-    
+
     ;
     [Id (x)
         (error "free-variable")]
-    
+
     [Anno (e A)  (interp e)]
     [At (e A)    (interp e)]
     [All (a e)   (interp e)]
-    
+
     ))
 
 
@@ -957,7 +976,7 @@
     [Tall (a A0)     `(all ,a ,(unparse-type A0))]
     [Tvar (a)        `,a]
     [Tmu  (a A0)     `(mu ,a ,(unparse-type A0))]
-    
+
     ; For bonus problem
     [Tsect (t1 t2)   `(sect ,(unparse-type t1) ,(unparse-type t2))]
     ))
@@ -974,7 +993,7 @@
         [Anno (e A)                `(Anno ,(unparse e) ,(unparse-type A))]
         [All (a e)                 `(All ,a ,(unparse e))]
         [At (e A)                  `(At ,(unparse e) ,(unparse-type A))]
-        [Let (x e1 eB)             `(Let (,x ,(unparse e1)) ,(unparse eB))] 
+        [Let (x e1 eB)             `(Let (,x ,(unparse e1)) ,(unparse eB))]
         [Lam (x body)              `(Lam ,x ,(unparse body))]
         [App (e1 e2)               `(App ,(unparse e1) ,(unparse e2))]
         [Rec (u body)              `(Rec ,u ,(unparse body))]
@@ -1019,7 +1038,7 @@
 ;  2. the result of (unparse (parse input)) is the same as input.
 ;
 ; May fail if input uses syntactic sugar; see test-parse-sugar below.
-; 
+;
 (define (test-parse input expected-abstract-exp)
   (let* ([abstract-exp  (parse input)]
          [concrete-exp  (unparse abstract-exp)])
@@ -1115,15 +1134,15 @@
   `{Anno
     {All a b
          {Rec map
-              {Lam f 
-                   {Lam xs 
-                        {Sum-case xs 
+              {Lam f
+                   {Lam xs
+                        {Sum-case xs
                                   {Inl x1 => {Inl Unit}}
                                   {Inr x2 => {Inr {Pair-case x2 {xh xt => {Pair {App f xh} {App {App map f} xt}}}}}}}}}}}
     {all a b
          {-> {-> a b} ,(List 'a) ,(List 'b)}}})
 
-(define Nil 
+(define Nil
   `{Anno
     {All a {Inl Unit}}
     {all a ,(List 'a)}})
@@ -1140,8 +1159,8 @@
   `{Let* {ConsInt {At ,Cons int}}
          {NilInt  {At ,Nil int}}
          {List-101 {App {App ConsInt 0}
-                        {App {App ConsInt -1} 
-                             {App {App ConsInt 1} 
+                        {App {App ConsInt -1}
+                             {App {App ConsInt 1}
                                   NilInt}}}}
          {App {App {At {At ,Map int} bool}
                    {Lam x {< 0 x}}}
@@ -1165,9 +1184,24 @@
 
 
 ; Once you have done Problem 2, this
-; 
+;
 ;   (synth (tc/empty) (parse SIP))
 ;
 ; should return
 ;
 ;   (T+ (Tunit) (T* (Tbool) (Tmu 'L (T+ (Tunit) (T* (Tbool) (Tvar 'L))))))
+
+(test (interp (parse `{Sum-case {Inl 5} {Inl x1 => 1} {Inr x2 => 2}}))
+      (Num 1))
+
+(test (check (tc/empty) (parse `{Sum-case {Inl 5} {Inl x1 => 1} {Inr x2 => 2}}) (Tint))
+      #t)
+
+(test (interp (parse `{Sum-case {Inr 5} {Inl x1 => 1} {Inr x2 => 2}}))
+      (Num 2))
+
+(test
+  (synth (tc/empty) (parse SIP))
+  (T+ (Tunit) (T* (Tbool) (Tmu 'L (T+ (Tunit) (T* (Tbool) (Tvar 'L)))))))
+
+
