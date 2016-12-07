@@ -593,8 +593,8 @@
     [Bfalse ()        (Tbool)]   ; Synth-btrue
     [Btrue ()         (Tbool)]   ; Synth-bfalse
 
-    [Inl (e) (T+ (synth context e) (Tunit))]
-    [Inr (e) (T+ (Tunit) (synth context e))]
+    ;[Inl (e) (T+ (synth context e) (Tunit))]
+    ;[Inr (e) (T+ (Tunit) (synth context e))]
 
     [At (e Ainstance)   ; Synth-at
         (let ([A (synth context e)])
@@ -1194,7 +1194,7 @@
 (test (interp (parse `{Sum-case {Inl 5} {Inl x1 => 1} {Inr x2 => 2}}))
       (Num 1))
 
-(test (check (tc/empty) (parse `{Sum-case {Inl 5} {Inl x1 => 1} {Inr x2 => 2}}) (Tint))
+(test (check (tc/empty) (parse `{Sum-case {Anno {Inl 5} {+ int int}} {Inl x1 => 1} {Inr x2 => 2}}) (Tint))
       #t)
 
 (test (interp (parse `{Sum-case {Inr 5} {Inl x1 => 1} {Inr x2 => 2}}))
