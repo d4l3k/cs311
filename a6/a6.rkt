@@ -619,11 +619,16 @@
 ;
 (define (synth context e)
   (let ([A (inner-synth context e)])
+    (synth-mu context A))
+)
+
+(define (synth-mu context A)
     (and A
          (type-case Type A
                     [Tmu (b B)
-                         (type-subst context A b B)]
-                    [else A]))))
+                         (synth-mu context (type-subst context A b B))]
+                    [else A])))
+
 
 ; check : Typing-context E Type -> boolean
 ;
@@ -711,7 +716,7 @@
         (let ([Asynth (synth context e)])
           (if (subtype? context Asynth A)
               #true
-              #false ; (error "expression " e " synthesized type " Asynth " but checking against " A)
+              #f; (error "expression " e " synthesized type " Asynth " but checking against " A)
               ))])]))
 
 ; subst : E symbol E -> E
@@ -1057,6 +1062,15 @@
     (test abstract-exp expected-abstract-exp)
     ))
 
+(synth (tc/empty)
+       (parse '{Anno
+                {All a {All b
+                            {Lam f {Lam p
+                                        {Pair-case p
+                                                   {x1 x2 => {Pair {App f x1}
+                                                                   x2}}}}}}}
+                {all a b {-> {-> a b} {* a a} {* b b}}}}))
+
 #|
 (test-parse '{+ 11 22} (Binop (Plusop) (Num 11) (Num 22)))
 
@@ -1118,14 +1132,6 @@
                                                                    {App f x2}}}}}}}}
                 {all a b {-> {-> a b} {* a a} {* b b}}}}))
 
-(synth (tc/empty)
-       (parse '{Anno
-                {All a {All b
-                            {Lam f {Lam p
-                                        {Pair-case p
-                                                   {x1 x2 => {Pair {App f x1}
-                                                                   x2}}}}}}}
-                {all a b {-> {-> a b} {* a a} {* b b}}}}))
 
 (define (List a)
   `{mu L {+ unit {* ,a L}}})
@@ -1166,21 +1172,25 @@
                    {Lam x {< 0 x}}}
               List-101}})
 
-(subtype? (tc/empty)
+(test (subtype? (tc/empty)
           (Tmu 'b (T+ (Tunit) (T* (Tpos) (Tvar 'b))))
           (Tmu 'b (T+ (Tunit) (T* (Tint) (Tvar 'b)))))
+      #t)
 
-(subtype? (tc/empty)
+(test (subtype? (tc/empty)
           (Tmu 'a (T+ (Tunit) (Tvar 'a)))
           (Tmu 'b (T+ (Tunit) (Tvar 'b))))
+      #t)
 
-(subtype? (tc/empty)
+(test (subtype? (tc/empty)
           (Tmu 'a (T+ (Tunit) (Tvar 'a)))
           (T+ (Tunit) (Tmu 'b (T+ (Tunit) (Tvar 'b)))))
+      #t)
 
-(subtype? (tc/empty)
+(test (subtype? (tc/empty)
           (Tmu 'a (T+ (Tunit) (Tvar 'a)))
           (T+ (Tunit) (Tmu 'b (T+ (Tunit) (Tvar 'b)))))
+      #t)
 
 
 ; Once you have done Problem 2, this
@@ -1203,5 +1213,4 @@
 (test
   (synth (tc/empty) (parse SIP))
   (T+ (Tunit) (T* (Tbool) (Tmu 'L (T+ (Tunit) (T* (Tbool) (Tvar 'L)))))))
-
 
